@@ -3,15 +3,17 @@
     
     通信処理を行うクラス。
 */
+#define InternetCommunication
+//#define LocalCommunication
 
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;
 using System.Text;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-
-
 
 public class APIManager : MonoBehaviour
 {
@@ -65,94 +67,95 @@ public class APIManager : MonoBehaviour
         // カウント、フラグの初期化
         getCnt = 0;
         maxGet = 10;
-        rankCnt=1;
-        befoScore=0;
+        rankCnt = 1;
+        befoScore = 0;
         befoCnt = 0;
         isGetRanking = false;
-}
-    /*
-        // Get通信処理
-        private IEnumerator GetData()
+    }
+
+// インターネットを使用して通信を行う場合の処理
+#if InternetCommunication
+    // Get通信処理
+    private IEnumerator GetData()
+    {
+
+        //データ受信開始
+        var request = UnityWebRequest.Get("https://script.google.com/macros/s/" + accessKey + "/exec");
+        // サーバーとの通信を開始
+        yield return request.SendWebRequest();
+
+        if (request.result == UnityWebRequest.Result.Success)
         {
-
-            //データ受信開始
-            var request = UnityWebRequest.Get("https://script.google.com/macros/s/" + accessKey + "/exec");
-            // サーバーとの通信を開始
-            yield return request.SendWebRequest();
-
-            if (request.result == UnityWebRequest.Result.Success)
+            // 通信成功時処理
+            if (request.responseCode == COM_SUCCESS)
             {
-                // 通信成功時処理
-                if (request.responseCode == COM_SUCCESS)
+                // Json形式のレコードを取得
+                var records = JsonUtility.FromJson<Records>(request.downloadHandler.text).records;
+
+
+                // スクロール領域の子オブジェクト削除
+                foreach (Transform child in rList.imageScroll.transform)
                 {
-                    // Json形式のレコードを取得
-                    var records = JsonUtility.FromJson<Records>(request.downloadHandler.text).records;
-
-
-                    // スクロール領域の子オブジェクト削除
-                    foreach (Transform child in rList.imageScroll.transform)
-                    {
-                        GameObject.Destroy(child.gameObject);
-                    }
-
-                    // データを順に取得
-                    foreach (var record in records)
-                    {
-
-                        // 前回のスコアと同じだった場合
-                        if (int.Parse(record.score)== befoScore)
-                        {
-                            // 重複後のランキングカウントを加算
-                            befoCnt++;
-
-                            // 順位のカウントを加算
-                            rankCnt++;
-
-                            // Jsonオブジェクトに変換
-                            rList.SetList(rankCnt-befoCnt, record.name, record.score);     
-                        }
-                        else
-                        {
-                            // Jsonオブジェクトに変換
-                            rList.SetList(rankCnt+1, record.name, record.score);
-
-                            // 順位のカウントを加算
-                            rankCnt++;
-
-                            // 重複のカウントをリセット
-                            befoCnt = 0;
-                        }
-
-                        // ローディング非表示
-                        loadingObj.SetActive(false);
-
-                        // ひとつ前のスコアを格納
-                        befoScore = int.Parse(record.score);
-
-                        // レコード取得数を加算
-                        getCnt++;
-
-                        // 20件取得したら終了
-                        if (getCnt >= maxGet)
-                        {
-                            break;
-                        }
-
-                    }
+                    GameObject.Destroy(child.gameObject);
                 }
-                else
+
+                // データを順に取得
+                foreach (var record in records)
                 {
-                    Debug.LogError("データ受信失敗：" + request.responseCode);
+
+                    // 前回のスコアと同じだった場合
+                    if (int.Parse(record.score) == befoScore)
+                    {
+                        // 重複後のランキングカウントを加算
+                        befoCnt++;
+
+                        // 順位のカウントを加算
+                        rankCnt++;
+
+                        // Jsonオブジェクトに変換
+                        rList.SetList(rankCnt - befoCnt, record.name, record.score);
+                    }
+                    else
+                    {
+                        // Jsonオブジェクトに変換
+                        rList.SetList(rankCnt + 1, record.name, record.score);
+
+                        // 順位のカウントを加算
+                        rankCnt++;
+
+                        // 重複のカウントをリセット
+                        befoCnt = 0;
+                    }
+
+                    // ローディング非表示
+                    loadingObj.SetActive(false);
+
+                    // ひとつ前のスコアを格納
+                    befoScore = int.Parse(record.score);
+
+                    // レコード取得数を加算
+                    getCnt++;
+
+                    // 20件取得したら終了
+                    if (getCnt >= maxGet)
+                    {
+                        break;
+                    }
+
                 }
             }
             else
             {
-                Debug.LogError("データ受信失敗" + request.result);
+                Debug.LogError("データ受信失敗：" + request.responseCode);
             }
         }
-        */
+        else
+        {
+            Debug.LogError("データ受信失敗" + request.result);
+        }
+    }
 
-    /*
+    
     // Post通信処理
     private IEnumerator PostCommunication(string url, string strPost)
     {
@@ -185,107 +188,10 @@ public class APIManager : MonoBehaviour
             }
         }
     }
-    */
-
-    // Get通信処理 TGS版
-    /*private void GetData()
-    {
-
-        string str_File = Resources.Load<TextAsset>("JsonRankingData").ToString();
-        Records json_File = JsonUtility.FromJson<Records>(str_File);
-
-        // スコアを降順に並べ替える
-        json_File.records = json_File.records.OrderByDescending(record => int.Parse(record.score)).ToArray();
 
 
-        // スクロール領域の子オブジェクト削除
-        foreach (Transform child in rList.imageScroll.transform)
-        {
-            GameObject.Destroy(child.gameObject);
-        }
-
-
-        rankCnt = 0; // 順位カウントのリセット
-        getCnt = 0;  // レコード取得数のリセット
-
-
-        foreach (Record record in json_File.records)
-        {
-            
-
-            // 前回のスコアと同じだった場合
-            if (int.Parse(record.score) == befoScore)
-            {
-                // 重複後のランキングカウントを加算
-                befoCnt++;
-
-                // 順位のカウントを加算
-                rankCnt++;
-
-                // Jsonオブジェクトに変換
-                rList.SetList(rankCnt - befoCnt, record.name, record.score);
-            }
-            else
-            {
-                // Jsonオブジェクトに変換
-                rList.SetList(rankCnt + 1, record.name, record.score);
-
-                // 順位のカウントを加算
-                rankCnt++;
-
-                // 重複のカウントをリセット
-                befoCnt = 0;
-            }
-
-            // ローディング非表示
-            loadingObj.SetActive(false);
-
-            // ひとつ前のスコアを格納
-            befoScore = int.Parse(record.score);
-
-            // レコード取得数を加算
-            getCnt++;
-
-            // 20件取得したら終了
-            if (getCnt >= maxGet)
-            {
-                break;
-            }
-        }
-
-        //rankCnt = 0;
-
-
-    }*/
-
-    // Jsonファイルにランキング情報を追加する処理 TGS版
-    /*private void AddScoreToJsonFile(JsonPostData newRecord)
-    {
-        // JsonRankingDataファイルの読み込み
-        string str_File = Resources.Load<TextAsset>("JsonRankingData").ToString();
-        Records json_File = JsonUtility.FromJson<Records>(str_File);
-
-        // 新しいレコードを追加
-        var newRecordsList = json_File.records.ToList();
-        Record newRecordEntry = new Record
-        {
-            name = newRecord.name,
-            score = newRecord.score.ToString()
-        };
-        newRecordsList.Add(newRecordEntry);
-
-        // 新しいデータでjson_Fileを更新
-        json_File.records = newRecordsList.ToArray();
-
-        // Jsonファイルに書き込み（上書き保存）
-        string newJsonData = JsonUtility.ToJson(json_File);
-        File.WriteAllText(Application.dataPath + "/Resources/JsonRankingData.json", newJsonData);
-
-
-
-}
-*/
-
+    // ローカル通信版
+#elif LocalCommunication
 
     // Get通信処理 TGS版
     private void GetData()
@@ -308,7 +214,7 @@ public class APIManager : MonoBehaviour
                 name = "a",
                 score = "1"
             };
-            records[0]=newRecordEntry;
+            records[0] = newRecordEntry;
             jsonRecords.records = records;
 
             PlayerPrefs.SetString("Rank", JsonUtility.ToJson(jsonRecords));
@@ -316,7 +222,7 @@ public class APIManager : MonoBehaviour
             //jsonRecords = JsonUtility.FromJson<Records>(jsonRecords.ToString());
         }
 
-        
+
         // スコアを降順に並べ替える
         jsonRecords.records = jsonRecords.records.OrderByDescending(record => int.Parse(record.score)).ToArray();
 
@@ -331,7 +237,7 @@ public class APIManager : MonoBehaviour
         rankCnt = 0; // 順位カウントのリセット
         getCnt = 0;  // レコード取得数のリセット
 
-        
+
         foreach (Record record in jsonRecords.records)
         {
 
@@ -378,9 +284,8 @@ public class APIManager : MonoBehaviour
 
         //rankCnt = 0;
 
-        
-    }
 
+    }
 
     // Jsonファイルにランキング情報を追加する処理 TGS版
     private void AddScoreToJsonFile(JsonPostData newRecord)
@@ -399,14 +304,20 @@ public class APIManager : MonoBehaviour
 
         jsonRecords.records = newRecordsList.ToArray();     // 
         PlayerPrefs.SetString("Rank", JsonUtility.ToJson(jsonRecords));
-
+        // ローディング非表示
+        loadingObj.SetActive(false);
     }
 
+#endif
 
-
+#if InternetCommunication
     // ランキング登録処理
-    //private IEnumerator PostScore()
+    private IEnumerator PostScore()
+
+#elif LocalCommunication
     private void PostScore()
+
+#endif
     {
         // 登録データ作成
         var post = new JsonPostData();
@@ -429,9 +340,10 @@ public class APIManager : MonoBehaviour
         // 登録するデータをJson形式に変換
         var jsonPost = JsonUtility.ToJson(post);
 
-        // 通信処理を実行 TGS版でコメントアウト中
-        //var coroutine = PostCommunication(URL_GAS, jsonPost);
-        //yield return StartCoroutine(coroutine);
+#if InternetCommunication
+        // 通信処理を実行
+        var coroutine = PostCommunication(URL_GAS, jsonPost);
+        yield return StartCoroutine(coroutine);
 
         // 通信終了
         // ローディングを非表示
@@ -447,8 +359,21 @@ public class APIManager : MonoBehaviour
             compleatedTextEn.SetActive(true);
         }
 
+#elif LocalCommunication
+        // 登録完了のテキストを表示
+        if (GameManager.isJapanese)
+        {
+            compleatedTextJa.SetActive(true);
+        }
+        else
+        {
+            compleatedTextEn.SetActive(true);
+        }
+
         //TGS版
         AddScoreToJsonFile(post);
+#endif
+
     }
 
     // ランキング登録ボタン押下時処理
@@ -458,29 +383,41 @@ public class APIManager : MonoBehaviour
         // ローディングを表示
         loadingObj.SetActive(true);
 
+#if InternetCommunication
         // Post通信処理を実行
-        PostScore();// TGS版
-        //var coroutine = PostScore();
-        //StartCoroutine(coroutine);
-        
+        var coroutine = PostScore();
+        StartCoroutine(coroutine);
+
+#elif LocalCommunication
+        PostScore();
+
+#endif
+
     }
 
 
     // ランキングボタン押下処理
     public void PushRankingButton()
     {
-        // まだランキングを取得していなければ取得 TGS版
-        //if (!isGetRanking)
+#if InternetCommunication
+        // まだランキングを取得していなければ取得
+        if (!isGetRanking)
+#elif LocalCommunication
+#endif
         {
             // ランキング取得のフラグをオン
             isGetRanking = true;
 
-            // ローディングを表示 TGS版
-            //loadingObj.SetActive(true);
+#if InternetCommunication
+            // ローディングを表示
+            loadingObj.SetActive(true);
 
             // Get通信処理を実行
-            //StartCoroutine(GetData());
+            StartCoroutine(GetData());
+
+#elif LocalCommunication
             GetData();
+#endif
 
         }
     }
@@ -488,13 +425,19 @@ public class APIManager : MonoBehaviour
     // ランキングを更に取得したい場合の処理
     public void PushMoreButton()
     {
-        // ローディングを表示 TGS版
-        //loadingObj.SetActive(true);
         // 最大取得数を変更
         maxGet += MORE_GET;
+
+#if InternetCommunication
+        // ローディングを表示
+        loadingObj.SetActive(true);
+        
         // Get通信を開始
-        //StartCoroutine(GetData());
+        StartCoroutine(GetData());
+
+#elif LocalCommunication
         GetData();
+#endif
 
         // ランキング順位のカウントなどを初期化
         getCnt = 0;
