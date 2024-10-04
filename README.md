@@ -1,4 +1,4 @@
-# PatapataInko
+# PatapataInko(パタパタインコ)
 
 <dl>
   <dt>概要</dt>
