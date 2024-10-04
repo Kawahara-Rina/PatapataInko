@@ -9,7 +9,6 @@
   <dt>開発環境：Unity、Visual Studio</dt>
   <dt>開発期間：2024年2月～3月</dt>
 </dl>
-[https://youtu.be/5obU3EU0gIs](https://youtu.be/5obU3EU0gIs)
 
 
 <img src="https://github.com/user-attachments/assets/35b46270-2940-4bf9-a2dc-7dfa93caf1c9" height="400">
